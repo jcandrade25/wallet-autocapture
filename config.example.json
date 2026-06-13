@@ -1,0 +1,104 @@
+{
+  "__README__": "Copy this file to config.json (which is git-ignored) and fill in YOUR values. Run `python setup_wizard.py` to auto-discover and fill accounts/labels/categories from your Wallet account. Keys starting with __ are comments and are ignored by the loader. NEVER commit config.json or your token to a public repo.",
+
+  "wallet": {
+    "__comment__": "BudgetBakers Wallet REST API. The token is read from token_file (relative to config.json) or the WALLET_API_TOKEN env var. Generate it at web.budgetbakers.com -> Settings -> API (Premium required). See INSTALL.md section 2.",
+    "api_base": "https://rest.budgetbakers.com/wallet/v1/api",
+    "token_file": ".wallet_token"
+  },
+
+  "currency": "COP",
+  "__currency__": "Your home currency ISO code (COP, USD, EUR, ...). Used as the default when a parsed transaction has no explicit currency.",
+
+  "identity": {
+    "__comment__": "Used to tell YOUR OWN transfers apart from real income/expense, and to put friendly names on known payees. self_names: any text that identifies you in an alert (full name, payment key/alias) -> a transfer to/from these is classified 'internal' and skipped. own_accounts: last-4 (or full) account numbers you own -> transfers between them are 'internal'. known_payees: maps a destination account/phone number to a human name shown as the counterParty.",
+    "self_names": ["YOUR NAME", "your.payment.key"],
+    "own_accounts": ["1234", "5678"],
+    "known_payees": {
+      "3001234567": "A friend"
+    }
+  },
+
+  "accounts": {
+    "__comment__": "Maps the account text that appears in your bank alert (e.g. the masked card number) to a Wallet account UUID. The setup wizard lists your Wallet accounts so you can paste the right id. usd_id is OPTIONAL: a USD sub-account/wallet to route foreign-currency purchases to. payment_type is one of: credit_card | debit_card | cash.",
+    "Credit Card *1234": {
+      "id": "<wallet-account-uuid>",
+      "usd_id": "<optional-usd-subaccount-uuid>",
+      "payment_type": "credit_card"
+    },
+    "Savings *5678": {
+      "id": "<wallet-account-uuid>",
+      "payment_type": "debit_card"
+    }
+  },
+
+  "default_account_id": "<wallet-account-uuid>",
+  "__default_account_id__": "Fallback Wallet account used when a transaction's account_hint does not match any key in 'accounts'.",
+
+  "categories": {
+    "__comment__": "Map a Wallet category NAME to its UUID. The setup wizard fills this from your Wallet categories. category_rules below reference these names; the LLM (if enabled) may only choose from these names (hard whitelist).",
+    "Restaurants & fast food": "<uuid>",
+    "Groceries": "<uuid>"
+  },
+
+  "labels": {
+    "__comment__": "Map a label NAME to its UUID. The setup wizard fills this from your Wallet labels. The keys here are referenced by autocaptured_label / pending_label / usd_label and by category_rules[].label.",
+    "reviewme": "<uuid>",
+    "needs-category": "<uuid>",
+    "usd": "<optional-uuid>"
+  },
+
+  "autocaptured_label": "reviewme",
+  "__autocaptured_label__": "Key in 'labels' for the marker label applied to EVERYTHING this tool creates, so you can find & review (or bulk-undo) auto-captured records in the app. Required.",
+
+  "pending_label": "needs-category",
+  "__pending_label__": "Key in 'labels' applied as a fallback when no confident category was found, so you can spot uncategorized items.",
+
+  "usd_label": "usd",
+  "__usd_label__": "Key in 'labels' applied to foreign-currency (USD) records. Optional; leave the label uuid empty to skip.",
+
+  "record_state": "uncleared",
+  "__record_state__": "All created records use this state. 'uncleared' = pending human review (recommended). The tool NEVER auto-approves.",
+
+  "category_rules": [
+    {
+      "__comment__": "Deterministic keyword -> category routing, evaluated top to bottom; first match wins. 'category' must be a name present in 'categories'. 'label' is optional and must be a name present in 'labels'. These run BEFORE the optional LLM.",
+      "keywords": ["UBER", "TAXI", "DIDI", "CABIFY"],
+      "category": "Taxi",
+      "label": "transport"
+    },
+    {
+      "keywords": ["NETFLIX", "SPOTIFY", "HBO", "DISNEY"],
+      "category": "Tv, streaming",
+      "label": "subscriptions"
+    }
+  ],
+
+  "email": {
+    "__comment__": "IMAP access to read bank-alert emails. Use an APP PASSWORD (never your normal password) via password_env (preferred) or password_file (a 1-line file OUTSIDE the repo). senders: substrings matched against the From header. statement_subject: subject substring used to detect a monthly statement arriving. days: how many days back to scan. See INSTALL.md section 4.",
+    "host": "imap.gmail.com",
+    "port": 993,
+    "user": "you@gmail.com",
+    "password_env": "WALLET_IMAP_PASSWORD",
+    "password_file": "~/.wallet_imap",
+    "senders": ["yourbank", "otherbank"],
+    "statement_subject": "statement",
+    "days": 3
+  },
+
+  "bank_adapter": "bancolombia",
+  "__bank_adapter__": "Name of the module in src/banks/ that parses YOUR bank's alert format. Ships with 'bancolombia'. For another bank, copy src/banks/TEMPLATE.py, write your regexes, and point this here. See INSTALL.md section 5.",
+
+  "ollama": {
+    "__comment__": "OPTIONAL local LLM (via Ollama) for categorizing tricky merchants and rescuing alerts the regex could not parse. If enabled is false or Ollama is unreachable, the tool still runs (falls back to pending_label). The model PROPOSES, the code VALIDATES against the categories/labels whitelist. See INSTALL.md section 6.",
+    "enabled": false,
+    "url": "http://localhost:11434",
+    "classify_model": "qwen2.5:7b",
+    "rescue_model": "qwen2.5:7b",
+    "embed_model": "all-minilm",
+    "embed_threshold": 0.66
+  },
+
+  "noise_categories": ["Transfer", "Loan, interests", "Others", "Uncategorized"],
+  "__noise_categories__": "Category names treated as low-signal: when building the embed index / nearest-merchant memory these are ignored so they don't pollute suggestions."
+}

@@ -1,0 +1,23 @@
+# wallet-autocapture — runtime dependencies
+#
+# CORE: NONE. The tool runs on the Python 3 standard library only
+# (imaplib, email, urllib, json, csv, re, ...). There is nothing to
+# `pip install` to use the core capture -> Wallet pipeline.
+#
+# Requires Python 3.8+ (uses email.policy.default and f-strings).
+#
+# ── Optional ──────────────────────────────────────────────────────────────
+# The local-LLM features (merchant categorization + parse rescue) talk to
+# Ollama over plain HTTP using urllib — so they ALSO need no pip package.
+# You only need to install Ollama itself (https://ollama.com) and pull a
+# model. See README.md "Models" and INSTALL.md section 6.
+#
+#   ollama pull qwen2.5:7b   # classify + rescue (recommended)
+#   ollama pull all-minilm   # embeddings (optional nearest-merchant memory)
+#
+# ── Development (optional) ──────────────────────────────────────────────────
+# If you want to run the test suite / lint, uncomment below:
+# pytest>=7.0
+#
+# (Everything above the dev section is intentionally empty of hard deps:
+#  `pip install -r requirements.txt` is a no-op for normal use.)
