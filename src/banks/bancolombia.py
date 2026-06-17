@@ -39,9 +39,13 @@ and is also what ``setup_wizard`` can seed the config with.
 import re
 
 # From-address substrings that carry Bancolombia / RappiPay transaction alerts.
-# "bancolombia" matches both an.notificacionesbancolombia.com and bancolombia.com.co;
-# "rappipay" matches noreply@rappipay.co.
-SENDERS = ["bancolombia", "rappipay"]
+# GOTCHA: Gmail's IMAP `FROM` search matches by TOKEN, not raw substring. Every alert ships
+# from @an.notificacionesbancolombia.com, whose token is "notificacionesbancolombia" — NOT a
+# standalone "bancolombia". When the sender's display name drops the word "Bancolombia"
+# (e.g. just "Alertas y Notificaciones"), a search for "bancolombia" silently misses the mail.
+# So match the token that is ALWAYS present in the alert domain. "bancolombia" is kept too for
+# statement mails from extractosbancolombia@bancolombia.com.co; "rappipay" for noreply@rappipay.co.
+SENDERS = ["notificacionesbancolombia", "bancolombia", "rappipay"]
 
 # --- reusable sub-patterns -------------------------------------------------
 DATE = r"(\d{2}/\d{2}/\d{2,4})"   # DD/MM/YY or DD/MM/YYYY
